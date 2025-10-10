@@ -2,7 +2,7 @@
   "name": "proxy",
   "version": 2,
   "routes": [
-    {"src": "/(.*)","dest": "http://cdn-nj.virplus.com/$1"}
+    {"src": "/(.*)","dest": "http://cdn-nj.savh.cn/$1"}
   ],
   "regions": ["sfo1","icn1"]
  }
