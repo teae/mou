@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>强密码生成器</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-glow: 0 0 20px rgba(168, 85, 247, 0.4);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 20%),
+                              radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 20%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-main);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            padding: 20px;
+        }
+
+        /* 主卡片设计 */
+        .generator-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        /* 密码显示区域 */
+        .password-display-box {
+            position: relative;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: border-color 0.3s;
+        }
+
+        .password-display-box:hover {
+            border-color: rgba(168, 85, 247, 0.5);
+        }
+
+        .password-text {
+            font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+            font-size: 22px;
+            letter-spacing: 1px;
+            color: #fff;
+            word-break: break-all;
+            margin-right: 10px;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .copy-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 强度条 */
+        .strength-meter {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        /* 控件区域 */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        label {
+            font-size: 15px;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        /* 滑块样式 */
+        .slider-container {
+            width: 100%;
+        }
+        
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .length-value {
+            color: #a855f7;
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+            transition: transform 0.1s;
+        }
+        
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        /* 开关样式 (Toggle Switch) */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background: var(--primary-gradient);
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #2196F3;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        /* 刷新/生成按钮 */
+        .generate-btn {
+            margin-top: 20px;
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            background: var(--primary-gradient);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: var(--accent-glow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(168, 85, 247, 0.6);
+        }
+
+        .generate-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Tooltip for copy */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            z-index: 100;
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* SVG Icons */
+        svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="toast" id="toast">密码已复制到剪贴板</div>
+
+    <div class="container">
+        <div class="generator-card">
+            <h1>密码生成器</h1>
+            <p class="subtitle">创建安全、独特且难以破解的密码</p>
+
+            <div class="password-display-box">
+                <span class="password-text" id="passwordOutput">Loading...</span>
+                <button class="copy-btn" id="copyBtn" title="复制密码">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="strength-meter">
+                <div class="strength-bar" id="strengthBar"></div>
+            </div>
+
+            <div class="controls">
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <label>密码长度</label>
+                        <span class="length-value" id="lengthValue">16</span>
+                    </div>
+                    <input type="range" min="4" max="64" value="16" id="lengthSlider">
+                </div>
+
+                <div class="control-group">
+                    <label>包含大写字母 (A-Z)</label>
+                    <label class="switch">
+                        <input type="checkbox" id="includeUppercase" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="control-group">
+                    <label>包含小写字母 (a-z)</label>
+                    <label class="switch">
+                        <input type="checkbox" id="includeLowercase" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="control-group">
+                    <label>包含数字 (0-9)</label>
+                    <label class="switch">
+                        <input type="checkbox" id="includeNumbers" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="control-group">
+                    <label>包含特殊符号 (!@#$)</label>
+                    <label class="switch">
+                        <input type="checkbox" id="includeSymbols">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <button class="generate-btn" id="generateBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                刷新密码
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // DOM 元素获取
+        const passwordOutput = document.getElementById('passwordOutput');
+        const lengthSlider = document.getElementById('lengthSlider');
+        const lengthValue = document.getElementById('lengthValue');
+        const includeUppercase = document.getElementById('includeUppercase');
+        const includeLowercase = document.getElementById('includeLowercase');
+        const includeNumbers = document.getElementById('includeNumbers');
+        const includeSymbols = document.getElementById('includeSymbols');
+        const generateBtn = document.getElementById('generateBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const strengthBar = document.getElementById('strengthBar');
+        const toast = document.getElementById('toast');
+
+        // 字符集定义
+        const CHAR_SETS = {
+            uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            lowercase: 'abcdefghijklmnopqrstuvwxyz',
+            numbers: '0123456789',
+            symbols: '!@#$%^&*()_+~`|}{[]:;?><,./-='
+        };
+
+        // 核心生成逻辑
+        function generatePassword() {
+            let length = parseInt(lengthSlider.value);
+            let chars = '';
+            
+            // 构建字符池
+            if (includeUppercase.checked) chars += CHAR_SETS.uppercase;
+            if (includeLowercase.checked) chars += CHAR_SETS.lowercase;
+            if (includeNumbers.checked) chars += CHAR_SETS.numbers;
+            if (includeSymbols.checked) chars += CHAR_SETS.symbols;
+
+            // 如果没有选择任何选项，默认启用小写
+            if (chars === '') {
+                includeLowercase.checked = true;
+                chars = CHAR_SETS.lowercase;
+            }
+
+            let password = '';
+            // 确保每种选中的类型至少出现一次 (增强安全性)
+            let mandatoryChars = [];
+            if (includeUppercase.checked) mandatoryChars.push(getRandomChar(CHAR_SETS.uppercase));
+            if (includeLowercase.checked) mandatoryChars.push(getRandomChar(CHAR_SETS.lowercase));
+            if (includeNumbers.checked) mandatoryChars.push(getRandomChar(CHAR_SETS.numbers));
+            if (includeSymbols.checked) mandatoryChars.push(getRandomChar(CHAR_SETS.symbols));
+
+            // 填充剩余长度
+            for (let i = 0; i < length - mandatoryChars.length; i++) {
+                password += getRandomChar(chars);
+            }
+
+            // 插入强制字符并打乱
+            for (let char of mandatoryChars) {
+                let randomIndex = Math.floor(Math.random() * (password.length + 1));
+                password = password.slice(0, randomIndex) + char + password.slice(randomIndex);
+            }
+            
+            // 最终截取（防止因强制插入导致的长度溢出逻辑，虽然上面逻辑已控制，但这是保险）
+            // 上面的逻辑其实是 填充 (Length - Man) 然后插入 Man，所以总长度刚好是 Length。
+            
+            passwordOutput.innerText = password;
+            updateStrength(length, [includeUppercase.checked, includeLowercase.checked, includeNumbers.checked, includeSymbols.checked]);
+        }
+
+        // 获取单个随机字符
+        function getRandomChar(str) {
+            const array = new Uint32Array(1);
+            window.crypto.getRandomValues(array);
+            return str[array[0] % str.length];
+        }
+
+        // 计算并更新强度条
+        function updateStrength(length, checks) {
+            let strength = 0;
+            const checkedCount = checks.filter(Boolean).length;
+
+            // 简单算法：长度加权 + 字符种类加权
+            strength += length * 3;
+            strength += checkedCount * 10;
+
+            let color = '#ef4444'; // Red
+            let width = '30%';
+
+            if (strength > 40) {
+                color = '#eab308'; // Yellow
+                width = '60%';
+            }
+            if (strength > 70) {
+                color = '#10b981'; // Green
+                width = '100%';
+            }
+
+            strengthBar.style.backgroundColor = color;
+            strengthBar.style.width = width;
+            
+            // 边缘情况处理：如果密码太短，强制红色
+            if(length < 8) {
+                strengthBar.style.backgroundColor = '#ef4444';
+                strengthBar.style.width = '20%';
+            }
+        }
+
+        // 复制到剪贴板
+        function copyToClipboard() {
+            const password = passwordOutput.innerText;
+            if (!password) return;
+
+            navigator.clipboard.writeText(password).then(() => {
+                showToast();
+            });
+        }
+
+        function showToast() {
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // 事件监听
+        generateBtn.addEventListener('click', generatePassword);
+        copyBtn.addEventListener('click', copyToClipboard);
+
+        // 实时响应所有输入变化
+        [lengthSlider, includeUppercase, includeLowercase, includeNumbers, includeSymbols].forEach(el => {
+            el.addEventListener('input', () => {
+                if (el === lengthSlider) {
+                    lengthValue.innerText = lengthSlider.value;
+                }
+                generatePassword();
+            });
+        });
+
+        // 初始化
+        generatePassword();
+
+    </script>
+</body>
+</html>
